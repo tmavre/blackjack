@@ -1,79 +1,69 @@
-from classes.deck import *
+import sys
+from libs import deck
+from libs import chips
+from libs import hand
+from libs import steps
 
 
-playing = True
-
-
-while True:
-    # Print an opening statement
-    print('Welcome to BlackJack! Get as close to 21 as you can without going over!\n\
-    Dealer hits until she reaches 17. Aces count as 1 or 11.')
-
+def new_game(bet):
     # Create & shuffle the deck, deal two cards to each player
-    deck = Deck()
-    deck.shuffle()
-
-    player_hand = Hand()
-    player_hand.add_card(deck.deal())
-    player_hand.add_card(deck.deal())
-
-    dealer_hand = Hand()
-    dealer_hand.add_card(deck.deal())
-    dealer_hand.add_card(deck.deal())
+    initial_deck = deck.Deck()
 
     # Set up the Player's chips
-    player_chips = Chips()
+    player_chips = chips.Chips()
 
     # Prompt the Player for their bet
-    take_bet(player_chips)
+    while not player_chips.take_bet(bet):
+        pass
 
-    # Show cards (but keep one dealer card hidden)
-    show_some(player_hand, dealer_hand)
+    player_hand = hand.Hand()
+    player_hand.add_card(initial_deck.deal())
+    player_hand.add_card(initial_deck.deal())
 
-    while playing:  # recall this variable from our hit_or_stand function
+    dealer_hand = hand.Hand()
+    dealer_hand.add_card(initial_deck.deal())
+    dealer_hand.add_card(initial_deck.deal())
+
+    init_steps = steps.Steps(
+        initial_deck, player_chips, player_hand, dealer_hand)
+
+    return init_steps
+
+
+def start_game():
+    # Print an opening statement
+    print('Welcome to BlackJack! Get as close to 21 as you can without going over!\n\
+        Dealer hits until she reaches 17. Aces count as 1 or 11.')
+
+    init_steps = new_game(int(input(
+        'How many chips would you like to bet? ')))
+
+    while True:  # recall this variable from our hit_or_stand function
+        init_steps.show_some()
 
         # Prompt for Player to Hit or Stand
-        hit_or_stand(deck, player_hand)
+        while init_steps.hit_or_stand(input(
+                "Would you like to Hit or Stand? Enter 'h' or 's' ")):
+            # Implement the steps of the game.
+            if not init_steps.operator():
+                break
+            pass
 
-        # Show cards (but keep one dealer card hidden)
-        show_some(player_hand, dealer_hand)
+        # inform Player of their chips total
+        print(init_steps.show_total_chips())
 
-        # If player's hand exceeds 21, run player_busts() and break out of loop
-        if player_hand.value > 21:
-            player_busts(player_hand, dealer_hand, player_chips)
-            break
-        # If Player hasn't busted, play Dealer's hand until Dealer reaches 17
+        # ask to play again
+        ask_for_new_game = input(
+            "Would you like to play another hand? Enter 'y' or 'n' ")
 
-    if player_hand.value <= 21:
-
-        while dealer_hand.value <= 17:
-            hit(deck, dealer_hand)
-
-        # Show all cards
-        show_all(player_hand, dealer_hand)
-
-        # Run different winning scenarios
-        if dealer_hand.value > 21:
-            dealer_busts(player_hand, dealer_hand, player_chips)
-
-        elif dealer_hand.value > player_hand.value:
-            dealer_wins(player_hand, dealer_hand, player_chips)
-
-        elif dealer_hand.value < player_hand.value:
-            player_wins(player_hand, dealer_hand, player_chips)
-
+        if ask_for_new_game.lower() == 'y':
+            init_steps = new_game(int(input(
+                'How many chips would you like to bet? ')))
+            continue
         else:
-            push(player_hand, dealer_hand)
+            print("Thanks for playing!")
+            sys.exit(0)
 
-    # inform Player of their chips total
-    print("\nPlayer's winnings stand at", player_chips.total)
 
-    # ask to play again
-    new_game = input("Would you like to play another hand? Enter 'y' or 'n'")
-
-    if new_game[0].lower() == 'y':
-        playing = True
-        continue
-    else:
-        print("Thanks for playing!")
-        break
+if __name__ == '__main__':
+    start_game()
